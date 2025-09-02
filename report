@@ -1,0 +1,106 @@
+import requests
+import pandas as pd
+from datetime import datetime
+
+# ========== CONFIG ==========
+ACCESS_TOKEN = os.getenv("SHOPIFY_TOKEN")
+SHOP = "o2otestv2.myshopify.com"
+DEBUG = True  # <--- tambahkan flag debug
+
+# Range tanggal (ubah sesuai kebutuhan)
+start_date = datetime(2024, 7, 1)
+end_date   = datetime(2024, 7, 31)
+
+# Endpoint orders (pakai versi API stabil, jangan terlalu jauh ke depan)
+current_url = f"https://{SHOP}/admin/api/2024-07/orders.json"
+params = {
+    "status": "any",
+    "created_at_min": start_date.strftime("%Y-%m-%dT00:00:00Z"),
+    "created_at_max": end_date.strftime("%Y-%m-%dT23:59:59Z"),
+    "limit": 250
+}
+
+headers = {
+    "X-Shopify-Access-Token": ACCESS_TOKEN,
+    "Content-Type": "application/json"
+}
+
+# ========== REQUEST ==========
+orders = []
+while current_url:
+    try:
+        response = requests.get(current_url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print("Request error:", e)
+        break
+
+    data = response.json()
+    orders.extend(data.get("orders", []))
+
+    # pagination
+    next_link = response.links.get("next", {}).get("url")
+    current_url = next_link if next_link else None
+    params = None  # setelah page pertama jangan kirim params lagi
+
+print(f"Jumlah order mentah diambil: {len(orders)}")
+
+# ========== PROSES DATA ==========
+summary = {}
+seen_orders = set()
+
+for order in orders:
+    oname = order.get("name")   # gunakan order name (#1001, #1002, dst)
+    if oname in seen_orders:
+        continue
+    seen_orders.add(oname)
+
+    created = order["created_at"][:10]  # YYYY-MM-DD
+
+    # Ambil sales (pakai current_total_price jika ada)
+    if "current_total_price" in order:
+        total_price = float(order["current_total_price"])
+    elif "total_price_set" in order and order["total_price_set"].get("shop_money"):
+        total_price = float(order["total_price_set"]["shop_money"].get("amount", 0))
+    else:
+        total_price = float(order.get("total_price", 0) or 0)
+
+    # total qty dari line_items
+    total_qty = sum(int(i.get("quantity", 0)) for i in order.get("line_items", []))
+
+    # total refunded qty
+    refunded_qty = 0
+    for refund in order.get("refunds", []):
+        for rli in refund.get("refund_line_items", []):
+            refunded_qty += int(rli.get("quantity", 0))
+
+    net_items = max(total_qty - refunded_qty, 0)
+
+    # DEBUG PRINT
+    if DEBUG:
+        print(f"OrderName {oname} | Date {created} | Sales {total_price} | "
+              f"Items {net_items} (total:{total_qty}, refunded:{refunded_qty})")
+
+    if created not in summary:
+        summary[created] = {"sales": 0, "orders": 0, "items": 0}
+
+    summary[created]["sales"] += total_price
+    summary[created]["orders"] += 1
+    summary[created]["items"] += net_items
+
+# ========== BUAT DATAFRAME ==========
+all_days = pd.date_range(start=start_date, end=end_date).strftime("%Y-%m-%d")
+rows = []
+
+for day in all_days:
+    rows.append({
+        "Day": datetime.strptime(day, "%Y-%m-%d").strftime("%b %d, %Y").replace(" 0", " "),
+        "Total sales": summary.get(day, {}).get("sales", 0),
+        "Net items sold": summary.get(day, {}).get("items", 0),
+        "Orders": summary.get(day, {}).get("orders", 0)
+    })
+
+df = pd.DataFrame(rows)
+
+# ========== CETAK ==========
+print(df)
