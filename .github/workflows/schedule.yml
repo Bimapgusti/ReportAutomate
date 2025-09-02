@@ -2,7 +2,7 @@ name: Shopify Data Pull
 
 on:
   schedule:
-    - cron: "0 16 * * *"  # 23:00 WIB (cron pakai UTC → 16:00 UTC = 23:00 WIB)
+    - cron: "30 8 * * *"  # 23:00 WIB (cron pakai UTC → 16:00 UTC = 23:00 WIB)
   workflow_dispatch:      # supaya bisa dijalankan manual juga
 
 jobs:
