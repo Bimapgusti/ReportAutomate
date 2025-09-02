@@ -14,7 +14,7 @@ SHOP = "o2otestv2.myshopify.com"
 
 EMAIL_FROM = "tesprojek2025@gmail.com"
 EMAIL_TO = "bimapgusti@gmail.com"
-EMAIL_PASS = "ubptqjbdrcpwzsuc"
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
