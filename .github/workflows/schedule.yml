@@ -1,9 +1,9 @@
-name: Shopify Data Pull
+name: Shopify Report Automate
 
 on:
   schedule:
-    - cron: "30 8 * * *"  # 23:00 WIB (cron pakai UTC → 16:00 UTC = 23:00 WIB)
-  workflow_dispatch:      # supaya bisa dijalankan manual juga
+    - cron: "30 8 * * *"  # 15:30 WIB
+  workflow_dispatch:
 
 jobs:
   run-script:
@@ -18,9 +18,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests pandas
+        run: pip install requests pandas openpyxl
 
       - name: Run script
         env:
           SHOPIFY_TOKEN: ${{ secrets.SHOPIFY_TOKEN }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         run: python shopify_pull.py
