@@ -1,0 +1,24 @@
+name: Run Shopify Report
+
+on:
+  schedule:
+    - cron: "25 9 * * *"   # 09:08 UTC = 16:08 WIB
+  workflow_dispatch:       # opsional, biar bisa run manual juga
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt || true
+
+      - name: Run script
+        run: python shopify_pull.py
