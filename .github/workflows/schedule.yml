@@ -17,13 +17,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+- name: Install dependencies
   run: |
-    if [ -f requirements.txt ]; then
-      pip install -r requirements.txt
-    else
-      pip install requests pandas openpyxl python-dotenv schedule
-    fi
+    pip install -r requirements.txt
+    pip install openpyxl
 
       - name: Run script
         run: python shopify_pull.py
