@@ -25,7 +25,7 @@ start_date = datetime(2024, 8, 1)   # <-- ubah sesuai kebutuhan
 end_date   = datetime(2024, 8, 31)   # <-- ubah sesuai kebutuhan
 
 # ========== REQUEST DATA DARI SHOPIFY ==========
-current_url = f"https://{SHOP}/admin/api/2025-07/orders.json"
+current_url = f"https://{SHOP}/admin/api/2024-07/orders.json"
 params = {
     "status": "any",
     "created_at_min": start_date.strftime("%Y-%m-%dT00:00:00Z"),
